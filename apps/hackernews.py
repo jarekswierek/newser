@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-import requests
+from abc import ABC, abstractmethod
 from datetime import date, datetime
+
+import requests
 
 
 API_URL = "https://hacker-news.firebaseio.com/v0/"
@@ -12,7 +14,7 @@ def get_date(timestamp):
     return date.fromtimestamp(timestamp)
 
 
-class Item():
+class Item:
     """Hacker News Item.
     """
     def __init__(self, id, title, url, type, time, *args, **kwargs):
@@ -25,17 +27,20 @@ class Item():
     def __repr__(self):
         return repr(self.title)
 
-class HackerNews():
-    """Hacker News class with top, new and best stories.
+class HackerNews(ABC):
+    """Abstract Hacker News base class.
     """
+    name = ""
+
     def __init__(self, *args, **kwargs):
-        self.timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        self.top = requests.get(API_URL + "topstories.json").json()
-        self.new = requests.get(API_URL + "newstories.json").json()
-        self.best = requests.get(API_URL + "beststories.json").json()
+        self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.items = requests.get(self.url).json()
+
+    def __len__(self):
+        return len(self.items)
 
     def __repr__(self):
-        return "Top, new and best stories from {}".format(self.timestamp)
+        return "{} from {!r}".format(self.name, self.timestamp)
 
     def get_item(self, item_id):
         """Method return Item object with given item id.
@@ -44,3 +49,38 @@ class HackerNews():
         url = API_URL + item_url
         r = requests.get(url)
         return Item(**r.json())
+
+    @property
+    @abstractmethod
+    def url(self):
+        pass
+
+
+class HackerNewsTop(HackerNews):
+    """Top Hacker News stories.
+    """
+    name = "Top stories"
+
+    @property
+    def url(self):
+        return API_URL + "topstories.json"
+
+
+class HackerNewsNew(HackerNews):
+    """New Hacker News stories.
+    """
+    name = "New stories"
+
+    @property
+    def url(self):
+        return API_URL + "newstories.json"
+
+
+class HackerNewsBest(HackerNews):
+    """Best Hacker News stories.
+    """
+    name = "Best stories"
+
+    @property
+    def url(self):
+        return API_URL + "beststories.json"
